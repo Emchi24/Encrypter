@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Encrypt
+{% endblock %}
+
+{% block main %}
+<title>Encrypt new File</title>
+<h1>Encrypt new File</h1>
+<form method=post enctype=multipart/form-data>
+    <div class="mb-3">
+        <input class="form-control" type="file" id="formFile" name=file >
+        <input type=submit value=Encrypt>
+      </div>
+</form>
+{% endblock %}
