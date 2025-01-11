@@ -1,0 +1,23 @@
+# Ignore everything by default
+*
+
+# Allow specific files and folders to be tracked
+!src/
+!src/static/
+!src/static/favicon.ico
+!src/templates/
+!src/templates/apology.html
+!src/templates/decrypt.html
+!src/templates/encrypt.html
+!src/templates/index.html
+!src/templates/layout.html
+!src/templates/login.html
+!src/templates/register.html
+!src/app.py
+!src/helpers.py
+!requirements.txt
+!.gitignore
+!README.md
+
+# Ignore unwanted files within allowed directories
+src/**/__pycache__/

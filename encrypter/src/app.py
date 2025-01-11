@@ -1,12 +1,12 @@
 import os
 from dotenv import load_dotenv
 from cs50 import SQL  # type: ignore
-from flask import Flask, flash, redirect, render_template, request, session, send_from_directory, abort  # type: ignore
+from flask import Flask, flash, redirect, render_template, request, session, send_from_directory  # type: ignore
 from flask_session import Session  # type: ignore
 from werkzeug.security import check_password_hash, generate_password_hash  # type: ignore
 from werkzeug.utils import secure_filename
 from cryptography.hazmat.primitives import serialization
-from helpers import apology, login_required, generate_rsa_keypair, encrypt_private_key, allowed_file, encrypt_file, decrypt_private_key, decrypt_file  # type: ignore
+from helpers import apology, login_required, generate_rsa_keypair, encrypt_private_key, allowed_file, encrypt_file, decrypt_private_key, decrypt_file, cleanup_after_request  # type: ignore
 
 app = Flask(__name__)
 
@@ -22,6 +22,11 @@ app.config["DECRYPT_FOLDER"] = DECRYPT_FOLDER
 app.config["ENCRYPTED_FOLDER"] = ENCRYPT_FOLDER
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
+
+# Register the after_request handler once
+app.after_request(cleanup_after_request)
+
+#create sessions
 Session(app)
 
 db = SQL("sqlite:///encrypter.db")
@@ -31,7 +36,9 @@ load_dotenv()
 
 secret_key = os.getenv("SECRET_KEY")
 
-
+if __name__ == "__main__":
+    app.run(debug=False)
+    
 @app.after_request
 def after_request(response):
     """Ensure responses aren't cached"""
@@ -94,6 +101,9 @@ def encrypt():
                 encrypt_file(
                     input_file, public_key, output_file, filename, session["user_id"]
                 )
+                # delete input file 
+                os.remove(input_file)
+                print(f"Successfully deleted {input_file}")
             except:
                 return apology("Something went wrong while encrypting the file")
             return redirect(f"/encrypt/download/{filename}")
@@ -106,12 +116,18 @@ def encrypt():
 def download_file_encrypt(filename):
     try:
         encrypted_folder = app.config.get("ENCRYPTED_FOLDER", "./encrypted")
-        return send_from_directory(
-            directory=encrypted_folder, path=filename, as_attachment=True
+        response = send_from_directory(
+            directory=encrypted_folder,
+            path=filename,
+            as_attachment=True
         )
+        response.headers['X-File-To-Delete'] = os.path.join(encrypted_folder, filename)
+        return response
     except Exception as e:
         print(f"Error occurred: {e}")
         return apology("Something went wrong while downloading the file")
+
+
 
 
 @app.route("/decrypt", methods=["GET", "POST"])
@@ -161,13 +177,16 @@ def decrypt():
 def download_file_decrypt(filename):
     try:
         decrypted_folder = app.config.get("DECRYPTED_FOLDER", "./decrypted")
-        return send_from_directory(
-            directory=decrypted_folder, path=filename, as_attachment=True
+        response = send_from_directory(
+            directory=decrypted_folder,
+            path=filename,
+            as_attachment=True
         )
+        response.headers['X-File-To-Delete'] = os.path.join(decrypted_folder, filename)
+        return response
     except Exception as e:
         print(f"Error occurred: {e}")
         return apology("Something went wrong while downloading the file")
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -221,11 +240,7 @@ def register():
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-
-        # Aufruf der Funktion
         result = encrypt_private_key(private_key, secret_key)
-
-        # Zugriff auf die einzelnen Werte
         encrypted_key = result["encrypted_key"]
         salt = result["salt"]
         iv = result["iv"]
