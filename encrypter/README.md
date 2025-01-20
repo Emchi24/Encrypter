@@ -2,6 +2,8 @@
 
 A secure Flask web application that enables users to encrypt and decrypt text files using RSA and AES encryption. The application combines asymmetric (RSA) and symmetric (AES) encryption to provide secure file handling while maintaining efficient performance.
 
+## Video Demo:  https://www.youtube.com/watch?v=0WOg9qKf-WA
+
 ## Features
 
 - User authentication system
@@ -30,6 +32,10 @@ A secure Flask web application that enables users to encrypt and decrypt text fi
 - The private key is encrypted using a master key from the `.env` file
 - Only encrypted versions of private keys are stored in the database
 - Public keys are stored in PEM format
+
+### Other
+- All temporary files are automatically deleted after operations
+- All user passwords are hashed using Werkzeug's security features
 
 ## Installation (for Debian based Linux versions)
 
@@ -144,8 +150,6 @@ flask run app.py
 
 ## Security requirements
 
-- All temporary files are automatically deleted after operations
-- All user passwords are hashed using Werkzeug's security features
 - The master encryption key must be kept secure in the `.env` file
 
 ## Database Schema
