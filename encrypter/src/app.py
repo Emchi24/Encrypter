@@ -14,12 +14,14 @@ UPLOAD_FOLDER = "./uploads"
 DOWNLOAD_FOLDER = "./downloads"
 ENCRYPT_FOLDER = "./encrypted"
 DECRYPT_FOLDER = "./decrypted"
+MAX_FILE_SIZE = 25 * 1024 * 1024 
 
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["DOWNLOAD_FOLDER"] = DOWNLOAD_FOLDER
 app.config["DECRYPT_FOLDER"] = DECRYPT_FOLDER
 app.config["ENCRYPTED_FOLDER"] = ENCRYPT_FOLDER
+app.config["MAX_FILE_SIZE"] = MAX_FILE_SIZE
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
 
@@ -78,6 +80,13 @@ def encrypt():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+                    # Check file size
+            file.seek(0, os.SEEK_END)
+            file_size = file.tell()
+            file.seek(0)  # Reset file pointer to beginning
+            
+            if file_size > MAX_FILE_SIZE:
+                return apology("File size exceeds 25MB limit")
 
             # Retrieve the public key from session and load it
             public_key_pem_temp = db.execute(
@@ -107,6 +116,8 @@ def encrypt():
             except:
                 return apology("Something went wrong while encrypting the file")
             return redirect(f"/encrypt/download/{filename}")
+        else:
+            return apology("you can only encrypt .txt files")
     else:
         return render_template("encrypt.html")
 
@@ -168,6 +179,8 @@ def decrypt():
                 return redirect(f"/decrypt/download/{filename}")
             except:
                 return apology("Something went wrong while decrypting the file")
+        else:
+            return apology("you can only encrypt .txt files")
     else:
         return render_template("decrypt.html")
 
